@@ -9,7 +9,7 @@ import { MapPin, Link as LinkIcon, Calendar, Edit, Settings, Grid, Heart, Bookma
 import { supabase } from '@/integrations/supabase/client';
 import PostCard from '@/components/post/PostCard';
 import { format } from 'date-fns';
-
+import { useRouter } from 'next/router';
 interface UserProfile {
   id: string;
   username: string;
@@ -33,7 +33,7 @@ const Profile = () => {
   const [likedPosts, setLikedPosts] = useState<any[]>([]);
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const router = useRouter();
   useEffect(() => {
     if (user) {
       fetchProfile();
@@ -186,7 +186,7 @@ const Profile = () => {
                   {profile.first_name?.charAt(0) || profile.username?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1 space-y-4">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
@@ -198,7 +198,7 @@ const Profile = () => {
                     )}
                   </div>
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => router.push('/settings')}>
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Profile
                     </Button>
@@ -263,7 +263,7 @@ const Profile = () => {
               Saved
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="posts" className="mt-6">
             {posts.length === 0 ? (
               <div className="text-center py-12">
@@ -277,7 +277,7 @@ const Profile = () => {
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="liked" className="mt-6">
             {likedPosts.length === 0 ? (
               <div className="text-center py-12">
@@ -291,7 +291,7 @@ const Profile = () => {
               </div>
             )}
           </TabsContent>
-          
+
           <TabsContent value="saved" className="mt-6">
             {savedPosts.length === 0 ? (
               <div className="text-center py-12">
