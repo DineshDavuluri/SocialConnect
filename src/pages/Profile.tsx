@@ -9,7 +9,8 @@ import { MapPin, Link as LinkIcon, Calendar, Edit, Settings, Grid, Heart, Bookma
 import { supabase } from '@/integrations/supabase/client';
 import PostCard from '@/components/post/PostCard';
 import { format } from 'date-fns';
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
+
 interface UserProfile {
   id: string;
   username: string;
@@ -33,7 +34,7 @@ const Profile = () => {
   const [likedPosts, setLikedPosts] = useState<any[]>([]);
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const navigate = useNavigate();
   useEffect(() => {
     if (user) {
       fetchProfile();
@@ -198,11 +199,11 @@ const Profile = () => {
                     )}
                   </div>
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => router.push('/settings')}>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Profile
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
                       <Settings className="h-4 w-4" />
                     </Button>
                   </div>
