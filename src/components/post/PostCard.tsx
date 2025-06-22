@@ -11,14 +11,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  Heart, 
-  MessageCircle, 
-  Share, 
-  MoreHorizontal, 
-  CheckCircle, 
-  UserPlus, 
-  Bookmark, 
+import {
+  Heart,
+  MessageCircle,
+  Share,
+  MoreHorizontal,
+  CheckCircle,
+  UserPlus,
+  Bookmark,
   Send,
   Edit,
   Trash2
@@ -60,40 +60,40 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
 
   const checkIfLiked = async () => {
     if (!user) return;
-    
+
     const { data } = await supabase
       .from('likes')
       .select('id')
       .eq('user_id', user.id)
       .eq('post_id', post.id)
       .single();
-    
+
     setIsLiked(!!data);
   };
 
   const checkIfSaved = async () => {
     if (!user) return;
-    
+
     const { data } = await supabase
       .from('saved_posts')
       .select('id')
       .eq('user_id', user.id)
       .eq('post_id', post.id)
       .single();
-    
+
     setIsSaved(!!data);
   };
 
   const checkIfFollowing = async () => {
     if (!user || user.id === post.user_id) return;
-    
+
     const { data } = await supabase
       .from('follows')
       .select('id')
       .eq('follower_id', user.id)
       .eq('following_id', post.user_id)
       .single();
-    
+
     setIsFollowing(!!data);
   };
 
@@ -103,13 +103,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
       .from('likes')
       .select('*', { count: 'exact', head: true })
       .eq('post_id', post.id);
-    
+
     // Get real-time comments count
     const { count: commentsCount } = await supabase
       .from('comments')
       .select('*', { count: 'exact', head: true })
       .eq('post_id', post.id);
-    
+
     setLikesCount(likesCount || 0);
     setCommentsCount(commentsCount || 0);
   };
@@ -359,10 +359,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
     try {
       const { error } = await supabase
         .from('posts')
-        .update({
-          is_deleted: true,
-          deleted_at: new Date().toISOString()
-        })
+        .delete()
         .eq('id', post.id)
         .eq('user_id', user.id);
 
@@ -463,11 +460,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
                   size="sm"
                   onClick={handleFollow}
                   disabled={isFollowLoading}
-                  className={`rounded-full px-4 ${
-                    isFollowing 
-                      ? 'border-gray-300 text-gray-700 hover:bg-gray-50' 
-                      : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
-                  }`}
+                  className={`rounded-full px-4 ${isFollowing
+                    ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
+                    }`}
                 >
                   <UserPlus className="h-4 w-4 mr-1" />
                   {isFollowing ? 'Following' : 'Follow'}
@@ -537,16 +533,15 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
                 size="sm"
                 onClick={handleLike}
                 disabled={isLiking}
-                className={`flex items-center space-x-2 rounded-full px-3 py-2 ${
-                  isLiked 
-                    ? 'text-red-500 bg-red-50 dark:bg-red-950/20' 
-                    : 'text-gray-600 dark:text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20'
-                }`}
+                className={`flex items-center space-x-2 rounded-full px-3 py-2 ${isLiked
+                  ? 'text-red-500 bg-red-50 dark:bg-red-950/20'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20'
+                  }`}
               >
                 <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
                 <span className="font-medium">{likesCount}</span>
               </Button>
-              
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -556,7 +551,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
                 <MessageCircle className="h-5 w-5" />
                 <span className="font-medium">{commentsCount}</span>
               </Button>
-              
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -572,11 +567,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
               variant="ghost"
               size="sm"
               onClick={handleSave}
-              className={`rounded-full p-2 ${
-                isSaved 
-                  ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/20' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20'
-              }`}
+              className={`rounded-full p-2 ${isSaved
+                ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                : 'text-gray-600 dark:text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20'
+                }`}
             >
               <Bookmark className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
             </Button>
@@ -584,9 +578,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
 
           {showComments && (
             <div className="mt-4 -mx-4">
-              <EnhancedCommentSection 
-                postId={post.id} 
-                onCommentCountChange={(count) => setCommentsCount(count)} 
+              <EnhancedCommentSection
+                postId={post.id}
+                onCommentCountChange={(count) => setCommentsCount(count)}
               />
             </div>
           )}

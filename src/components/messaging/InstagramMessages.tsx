@@ -10,17 +10,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  Send, 
-  CheckCheck, 
-  Check, 
-  Edit, 
-  Trash2, 
-  Reply, 
-  MoreVertical, 
-  Share, 
-  Heart, 
-  MessageCircle 
+import {
+  Send,
+  CheckCheck,
+  Check,
+  Edit,
+  Trash2,
+  Reply,
+  MoreVertical,
+  Share,
+  Heart,
+  MessageCircle
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import MessageReactions from './MessageReactions';
@@ -65,7 +65,7 @@ const InstagramMessages = () => {
 
     try {
       console.log('Fetching followed users for user:', user.id);
-      
+
       const { data, error } = await supabase
         .from('follows')
         .select(`
@@ -100,12 +100,12 @@ const InstagramMessages = () => {
 
   const fetchMessages = async (otherUserId: string) => {
     if (!user) return;
-    
+
     setLoading(true);
 
     try {
       console.log('Fetching messages between:', user.id, 'and:', otherUserId);
-      
+
       // Fetch messages with simpler query to avoid schema cache issues
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
@@ -145,7 +145,7 @@ const InstagramMessages = () => {
       // Fetch reply-to messages separately
       const replyToIds = messagesData.filter(m => m.reply_to).map(m => m.reply_to);
       let replyMessagesMap = {};
-      
+
       if (replyToIds.length > 0) {
         const { data: replyMessages, error: replyError } = await supabase
           .from('messages')
@@ -274,7 +274,7 @@ const InstagramMessages = () => {
           acc[reaction.message_id].push(reaction);
           return acc;
         }, {} as Record<string, any[]>) || {};
-        
+
         setMessageReactions(groupedReactions);
       }
     } catch (error) {
@@ -299,7 +299,7 @@ const InstagramMessages = () => {
 
     try {
       console.log('Sending message:', newMessage);
-      
+
       const messageData = {
         sender_id: user.id,
         receiver_id: selectedConversation.user.id,
@@ -351,7 +351,7 @@ const InstagramMessages = () => {
     try {
       const { error } = await supabase
         .from('messages')
-        .update({ 
+        .update({
           content: newContent.trim(),
           is_edited: true,
           edited_at: new Date().toISOString()
@@ -384,7 +384,7 @@ const InstagramMessages = () => {
     try {
       const { error } = await supabase
         .from('messages')
-        .update({ 
+        .update({
           deleted_for_everyone: true,
           deleted_for_everyone_at: new Date().toISOString()
         })
@@ -491,7 +491,7 @@ const InstagramMessages = () => {
             <div className="text-foreground">{message.reply_to_message.content}</div>
           </div>
         )}
-        
+
         {editingMessage === message.id ? (
           <div className="space-y-2">
             <Input
@@ -557,9 +557,8 @@ const InstagramMessages = () => {
                 return (
                   <div
                     key={userData.id}
-                    className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border ${
-                      selectedConversation?.user.id === userData.id ? 'bg-primary/10' : ''
-                    }`}
+                    className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors border-b border-border ${selectedConversation?.user.id === userData.id ? 'bg-primary/10' : ''
+                      }`}
                     onClick={() => startConversation(userData)}
                   >
                     <div className="flex items-center space-x-3">
@@ -604,7 +603,7 @@ const InstagramMessages = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Messages Area */}
               <div className="flex-1 overflow-hidden">
                 <ScrollArea className="h-full">
@@ -614,22 +613,7 @@ const InstagramMessages = () => {
                         Loading conversation history...
                       </div>
                     )}
-                    
-                    {replyingTo && (
-                      <div className="bg-primary/10 p-3 rounded-xl border border-primary/20">
-                        <p className="text-sm text-primary font-medium mb-1">Replying to:</p>
-                        <p className="text-sm text-foreground">{replyingTo.content}</p>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => setReplyingTo(null)}
-                          className="mt-2 h-6 px-2 text-xs text-primary hover:text-primary/80"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    )}
-                    
+
                     {messages.map((message) => (
                       <div
                         key={`${message.type}-${message.id}`}
@@ -637,18 +621,16 @@ const InstagramMessages = () => {
                       >
                         <div className="max-w-xs lg:max-w-md relative">
                           <div
-                            className={`px-4 py-2 rounded-2xl relative ${
-                              message.sender_id === user.id
-                                ? 'bg-primary text-primary-foreground ml-auto'
-                                : 'bg-muted text-foreground'
-                            }`}
+                            className={`px-4 py-2 rounded-2xl relative ${message.sender_id === user.id
+                              ? 'bg-primary text-primary-foreground ml-auto'
+                              : 'bg-muted text-foreground'
+                              }`}
                           >
                             {renderMessageContent(message)}
-                            
+
                             <div className="flex items-center justify-between mt-1">
-                              <p className={`text-xs ${
-                                message.sender_id === user.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                              }`}>
+                              <p className={`text-xs ${message.sender_id === user.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                                }`}>
                                 {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                               </p>
                               {message.sender_id === user.id && message.type === 'message' && (
@@ -697,7 +679,7 @@ const InstagramMessages = () => {
                                         <Edit className="h-4 w-4 mr-2" />
                                         Edit
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem 
+                                      <DropdownMenuItem
                                         onClick={() => deleteForEveryone(message.id)}
                                         className="text-destructive"
                                       >
@@ -713,7 +695,22 @@ const InstagramMessages = () => {
                         </div>
                       </div>
                     ))}
-                    
+
+                    {replyingTo && (
+                      <div className="bg-primary/10 p-3 rounded-xl border border-primary/20">
+                        <p className="text-sm text-primary font-medium mb-1">Replying to:</p>
+                        <p className="text-sm text-foreground">{replyingTo.content}</p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setReplyingTo(null)}
+                          className="mt-2 h-6 px-2 text-xs text-primary hover:text-primary/80"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+
                     {isTyping && (
                       <div className="flex justify-start">
                         <div className="bg-muted px-4 py-2 rounded-2xl">
@@ -725,7 +722,7 @@ const InstagramMessages = () => {
                         </div>
                       </div>
                     )}
-                    
+
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
@@ -747,8 +744,8 @@ const InstagramMessages = () => {
                       disabled={loading}
                     />
                   </div>
-                  <Button 
-                    onClick={sendMessage} 
+                  <Button
+                    onClick={sendMessage}
                     disabled={!newMessage.trim() || loading}
                     className="rounded-full w-10 h-10 p-0 bg-primary hover:bg-primary/90 disabled:bg-muted"
                   >

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -9,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Search as SearchIcon, Users, Hash } from 'lucide-react';
+import { Search as SearchIcon, Users, Hash, UserPlus } from 'lucide-react';
 import PostCard from '@/components/post/PostCard';
 
 const Search = () => {
@@ -20,6 +19,8 @@ const Search = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [hashtags, setHashtags] = useState<{ tag: string; count: number }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [followMap, setFollowMap] = useState<Record<string, boolean>>({});
+  const [followLoadingMap, setFollowLoadingMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const q = searchParams.get('q');
@@ -31,17 +32,15 @@ const Search = () => {
 
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) return;
-    
+
     setLoading(true);
     try {
-      // Search users
       const { data: usersData } = await supabase
         .from('users')
         .select('*')
         .or(`username.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`)
         .limit(20);
 
-      // Search posts
       const { data: postsData } = await supabase
         .from('posts')
         .select(`
@@ -59,7 +58,6 @@ const Search = () => {
         .order('created_at', { ascending: false })
         .limit(20);
 
-      // Extract hashtags from posts
       const hashtagMatches = postsData?.reduce((acc: { tag: string; count: number }[], post) => {
         const matches = post.content?.match(/#\w+/g) || [];
         matches.forEach((tag: string) => {
@@ -79,10 +77,69 @@ const Search = () => {
       setUsers(usersData || []);
       setPosts(postsData || []);
       setHashtags(hashtagMatches || []);
+      await fetchFollowStatus(usersData || []);
     } catch (error) {
       console.error('Search error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFollowStatus = async (usersList: any[]) => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', user.id)
+      .in('following_id', usersList.map((u) => u.id));
+
+    if (error) {
+      console.error('Error fetching follow status:', error.message);
+      return;
+    }
+
+    const map: Record<string, boolean> = {};
+    data?.forEach((row) => {
+      map[row.following_id] = true;
+    });
+    setFollowMap(map);
+  };
+
+  const toggleFollow = async (targetUserId: string) => {
+    if (!user || user.id === targetUserId) return;
+
+    setFollowLoadingMap((prev) => ({ ...prev, [targetUserId]: true }));
+
+    const isFollowing = followMap[targetUserId];
+
+    try {
+      if (isFollowing) {
+        await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', targetUserId);
+
+        setFollowMap((prev) => ({ ...prev, [targetUserId]: false }));
+      } else {
+        await supabase
+          .from('follows')
+          .insert({ follower_id: user.id, following_id: targetUserId });
+
+        setFollowMap((prev) => ({ ...prev, [targetUserId]: true }));
+
+        await supabase.from('notifications').insert({
+          user_id: targetUserId,
+          actor_id: user.id,
+          type: 'follow',
+          message: 'started following you',
+        });
+      }
+    } catch (err) {
+      console.error('Follow/unfollow error:', err);
+    } finally {
+      setFollowLoadingMap((prev) => ({ ...prev, [targetUserId]: false }));
     }
   };
 
@@ -161,8 +218,18 @@ const Search = () => {
                         </div>
                       </div>
                       {user && user.id !== searchUser.id && (
-                        <Button variant="outline" size="sm">
-                          Follow
+                        <Button
+                          variant={followMap[searchUser.id] ? 'outline' : 'default'}
+                          size="sm"
+                          onClick={() => toggleFollow(searchUser.id)}
+                          disabled={followLoadingMap[searchUser.id]}
+                          className={`rounded-full px-4 ${followMap[searchUser.id]
+                              ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                              : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
+                            }`}
+                        >
+                          <UserPlus className="h-4 w-4 mr-1" />
+                          {followMap[searchUser.id] ? 'Following' : 'Follow'}
                         </Button>
                       )}
                     </CardContent>
