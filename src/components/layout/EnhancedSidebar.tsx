@@ -7,14 +7,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import NotificationSystem from '@/components/notifications/NotificationSystem';
 import ProfilePictureUpload from '@/components/profile/ProfilePictureUpload';
-import { 
-  Home, 
-  Search, 
-  Compass, 
-  Heart, 
-  PlusSquare, 
-  MessageCircle, 
-  User, 
+import {
+  Home,
+  Search,
+  Compass,
+  Heart,
+  PlusSquare,
+  MessageCircle,
+  User,
   Settings,
   LogOut,
   Bookmark
@@ -55,7 +55,7 @@ const EnhancedSidebar = () => {
         {/* Logo */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-800">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            SocialApp
+            SocialConnect
           </h1>
         </div>
 
@@ -66,10 +66,9 @@ const EnhancedSidebar = () => {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                  isActive
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`
               }
             >
