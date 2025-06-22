@@ -178,7 +178,7 @@ const AuthForm = () => {
             <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              <TabsTrigger value="reset">Reset</TabsTrigger>
+              <TabsTrigger value="reset">Reset Password</TabsTrigger>
             </TabsList>
 
             {/* Login */}
