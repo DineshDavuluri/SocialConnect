@@ -19,13 +19,14 @@ import Stories from "./pages/Stories";
 import Saved from "./pages/Saved";
 import NotFound from "./pages/NotFound";
 import EnhancedSidebar from "@/components/layout/EnhancedSidebar";
+import ResetPassword from './pages/reset-password';
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
   const { user, loading } =
 
- useAuth();
+    useAuth();
 
   if (loading) {
     return (
@@ -49,6 +50,7 @@ const AppContent = () => {
       <main className="flex-1 ml-64">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/search" element={<Search />} />
           <Route path="/activity" element={<Activity />} />
           <Route path="/messages" element={<Messages />} />

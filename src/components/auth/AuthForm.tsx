@@ -1,24 +1,26 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle
+} from '@/components/ui/card';
+import {
+  Tabs, TabsContent, TabsList, TabsTrigger
+} from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
+import zxcvbn from 'zxcvbn'; // Ensure: npm i zxcvbn
 
 const AuthForm = () => {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { toast } = useToast();
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: ''
-  });
+  const [loginData, setLoginData] = useState({ email: '', password: '' });
 
   const [signupData, setSignupData] = useState({
     email: '',
@@ -31,33 +33,30 @@ const AuthForm = () => {
 
   const [resetEmail, setResetEmail] = useState('');
 
+  useEffect(() => {
+    const score = zxcvbn(signupData.password).score;
+    setPasswordStrength(score);
+  }, [signupData.password]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password,
-      });
-
+      const { error } = await supabase.auth.signInWithPassword(loginData);
       if (error) {
         toast({
-          title: "Login failed",
+          title: 'Login failed',
           description: error.message,
-          variant: "destructive",
+          variant: 'destructive',
         });
       } else {
-        toast({
-          title: "Welcome back!",
-          description: "You have been successfully logged in.",
-        });
+        toast({ title: 'Welcome back!', description: 'You are now signed in.' });
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: "Login failed",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+        title: 'Login failed',
+        description: 'Something went wrong. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -66,27 +65,25 @@ const AuthForm = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (signupData.password !== signupData.confirmPassword) {
       toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
-        variant: "destructive",
+        title: 'Passwords do not match',
+        description: 'Please ensure both passwords are the same.',
+        variant: 'destructive',
       });
       return;
     }
 
-    if (signupData.password.length < 6) {
+    if (signupData.password.length < 8 || passwordStrength < 2) {
       toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters long.",
-        variant: "destructive",
+        title: 'Weak password',
+        description: 'Use at least 8 characters with numbers and uppercase letters.',
+        variant: 'destructive',
       });
       return;
     }
 
     setIsLoading(true);
-
     try {
       const { error } = await supabase.auth.signUp({
         email: signupData.email,
@@ -100,24 +97,23 @@ const AuthForm = () => {
           }
         }
       });
-
       if (error) {
         toast({
-          title: "Signup failed",
+          title: 'Signup failed',
           description: error.message,
-          variant: "destructive",
+          variant: 'destructive',
         });
       } else {
         toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account.",
+          title: 'Account created',
+          description: 'Check your email to confirm your registration.',
         });
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: "Signup failed",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+        title: 'Signup failed',
+        description: 'Something went wrong. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -127,29 +123,43 @@ const AuthForm = () => {
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
+      const { data, error: queryError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', resetEmail)
+        .single();
+
+      if (queryError || !data) {
+        toast({
+          title: 'Email not found',
+          description: 'No user is registered with this email.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) {
         toast({
-          title: "Reset failed",
+          title: 'Reset failed',
           description: error.message,
-          variant: "destructive",
+          variant: 'destructive',
         });
       } else {
         toast({
-          title: "Reset link sent!",
-          description: "Please check your email for the password reset link.",
+          title: 'Reset link sent!',
+          description: 'Check your email for a password reset link.',
         });
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: "Reset failed",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+        title: 'Reset failed',
+        description: 'Something went wrong. Try again later.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -157,22 +167,21 @@ const AuthForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">SocialConnect</CardTitle>
-          <CardDescription className="text-center">
-            Connect with friends and share your moments
-          </CardDescription>
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">SocialConnect</CardTitle>
+          <CardDescription>Login, Sign up or Reset your password</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
               <TabsTrigger value="reset">Reset</TabsTrigger>
             </TabsList>
-            
+
+            {/* Login */}
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
@@ -180,9 +189,9 @@ const AuthForm = () => {
                   <Input
                     id="login-email"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder="Enter email"
                     value={loginData.email}
-                    onChange={(e) => setLoginData({...loginData, email: e.target.value})}
+                    onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                     required
                   />
                 </div>
@@ -191,10 +200,10 @@ const AuthForm = () => {
                   <div className="relative">
                     <Input
                       id="login-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter password"
                       value={loginData.password}
-                      onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                       required
                     />
                     <Button
@@ -204,70 +213,66 @@ const AuthForm = () => {
                       className="absolute right-0 top-0 h-full px-3"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="text-lg">{showPassword ? '🙈' : '👁️'}</span>
                     </Button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Sign In"}
+                <Button className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing in...' : 'Sign In'}
                 </Button>
               </form>
             </TabsContent>
-            
+
+            {/* Sign Up */}
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="first-name">First Name</Label>
+                    <Label>First Name</Label>
                     <Input
-                      id="first-name"
-                      placeholder="First name"
+                      placeholder="First"
                       value={signupData.firstName}
-                      onChange={(e) => setSignupData({...signupData, firstName: e.target.value})}
+                      onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="last-name">Last Name</Label>
+                    <Label>Last Name</Label>
                     <Input
-                      id="last-name"
-                      placeholder="Last name"
+                      placeholder="Last"
                       value={signupData.lastName}
-                      onChange={(e) => setSignupData({...signupData, lastName: e.target.value})}
+                      onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
                       required
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label>Username</Label>
                   <Input
-                    id="username"
-                    placeholder="Choose a username"
+                    placeholder="Username"
                     value={signupData.username}
-                    onChange={(e) => setSignupData({...signupData, username: e.target.value})}
+                    onChange={(e) => setSignupData({ ...signupData, username: e.target.value })}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label>Email</Label>
                   <Input
-                    id="signup-email"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder="Email"
                     value={signupData.email}
-                    onChange={(e) => setSignupData({...signupData, email: e.target.value})}
+                    onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label>Password</Label>
                   <div className="relative">
                     <Input
-                      id="signup-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Create a password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Password"
                       value={signupData.password}
-                      onChange={(e) => setSignupData({...signupData, password: e.target.value})}
+                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                       required
                     />
                     <Button
@@ -277,19 +282,27 @@ const AuthForm = () => {
                       className="absolute right-0 top-0 h-full px-3"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="text-lg">{showPassword ? '🙈' : '👁️'}</span>
                     </Button>
                   </div>
+                  <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded">
+                    <div
+                      className={`h-full rounded ${['bg-red-500', 'bg-orange-400', 'bg-yellow-400', 'bg-green-400', 'bg-green-600'][passwordStrength]}`}
+                      style={{ width: `${(passwordStrength + 1) * 20}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Use at least 8 characters including uppercase and numbers.
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Label>Confirm Password</Label>
                   <div className="relative">
                     <Input
-                      id="confirm-password"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm your password"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Confirm Password"
                       value={signupData.confirmPassword}
-                      onChange={(e) => setSignupData({...signupData, confirmPassword: e.target.value})}
+                      onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
                       required
                     />
                     <Button
@@ -299,22 +312,22 @@ const AuthForm = () => {
                       className="absolute right-0 top-0 h-full px-3"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="text-lg">{showConfirmPassword ? '🙈' : '👁️'}</span>
                     </Button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating account..." : "Create Account"}
+                <Button className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Creating account...' : 'Sign Up'}
                 </Button>
               </form>
             </TabsContent>
-            
+
+            {/* Reset Password */}
             <TabsContent value="reset">
               <form onSubmit={handlePasswordReset} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="reset-email">Email</Label>
+                  <Label>Email</Label>
                   <Input
-                    id="reset-email"
                     type="email"
                     placeholder="Enter your email"
                     value={resetEmail}
@@ -322,8 +335,8 @@ const AuthForm = () => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send Reset Link"}
+                <Button className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Sending link...' : 'Send Reset Link'}
                 </Button>
               </form>
             </TabsContent>
