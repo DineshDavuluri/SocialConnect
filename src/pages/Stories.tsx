@@ -53,7 +53,7 @@ const Stories = () => {
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64 = e.target?.result as string;
-        
+
         const { error } = await supabase
           .from('stories')
           .insert({
@@ -95,7 +95,7 @@ const Stories = () => {
 
   const viewStory = async (story: any) => {
     setSelectedStory(story);
-    
+
     // Increment view count
     await supabase.rpc('increment_story_views', { story_id: story.id });
   };
@@ -142,8 +142,8 @@ const Stories = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
           {stories.map((story) => (
-            <Card 
-              key={story.id} 
+            <Card
+              key={story.id}
               className="cursor-pointer hover:scale-105 transition-transform aspect-[9/16] relative overflow-hidden"
               onClick={() => viewStory(story)}
             >
@@ -200,7 +200,7 @@ const Stories = () => {
                 >
                   <X className="h-4 w-4" />
                 </Button>
-                
+
                 {selectedStory.media_type === 'video' ? (
                   <video
                     src={selectedStory.media_url}
@@ -215,7 +215,7 @@ const Stories = () => {
                     className="w-full h-full object-cover"
                   />
                 )}
-                
+
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                   <div className="flex items-center space-x-3 mb-2">
                     <Avatar className="h-10 w-10">

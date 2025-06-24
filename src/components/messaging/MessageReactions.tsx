@@ -24,7 +24,7 @@ const MessageReactions = ({ messageId, reactions, onReactionUpdate }: MessageRea
     try {
       // Check if user already reacted
       const existingReaction = reactions.find(r => r.user_id === user.id);
-      
+
       if (existingReaction) {
         // Update existing reaction
         await supabase
@@ -89,7 +89,7 @@ const MessageReactions = ({ messageId, reactions, onReactionUpdate }: MessageRea
           {emoji} {String(count)}
         </Button>
       ))}
-      
+
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button variant="ghost" size="sm" className="h-6 w-6 p-0 bg-white/90 hover:bg-white border border-gray-200 rounded-full shadow-sm">
