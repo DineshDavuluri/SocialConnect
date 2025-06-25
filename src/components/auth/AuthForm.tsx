@@ -11,7 +11,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
-import zxcvbn from 'zxcvbn'; // Ensure: npm i zxcvbn
+import zxcvbn from 'zxcvbn';
 
 const AuthForm = () => {
   const { toast } = useToast();
@@ -167,8 +167,16 @@ const AuthForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 p-4">
-      <Card className="w-full max-w-md">
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center p-4"
+      style={{
+        backgroundImage: 'url("/AuthBg.png")',
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        backgroundBlendMode: 'overlay',
+      }}
+    >
+
+      <Card className="backdrop-blur-lg bg-transparent w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">SocialConnect</CardTitle>
           <CardDescription>Login, Sign up or Reset your password</CardDescription>
@@ -178,7 +186,7 @@ const AuthForm = () => {
             <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              <TabsTrigger value="reset">Reset Password</TabsTrigger>
+              <TabsTrigger value="reset">Pass-Reset</TabsTrigger>
             </TabsList>
 
             {/* Login */}
