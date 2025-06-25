@@ -64,6 +64,7 @@ interface MusicSelection {
   title: string;
   artist: string;
   duration: number;
+  url: string;
 }
 
 interface DraggableOverlayProps {
@@ -148,16 +149,14 @@ const StoryEditor: React.FC<StoryEditorProps> = ({ isOpen, onClose, onStoryCreat
   const [fileLoading, setFileLoading] = useState(false);
   const [selectedMusic, setSelectedMusic] = useState<MusicSelection | null>(null);
   const [currentFilter, setCurrentFilter] = useState<string>('none');
-
   const [newText, setNewText] = useState('');
   const [textColor, setTextColor] = useState('#ffffff');
   const [textBgColor, setTextBgColor] = useState('transparent');
   const [fontSize, setFontSize] = useState([24]);
   const [fontFamily, setFontFamily] = useState('Arial');
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRef = useRef<HTMLImageElement | HTMLVideoElement | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const debouncedUpdatePosition = useCallback(
     debounce((id: string, x: number, y: number, type: string) => {
@@ -228,77 +227,26 @@ const StoryEditor: React.FC<StoryEditorProps> = ({ isOpen, onClose, onStoryCreat
       if (mediaPreview) {
         URL.revokeObjectURL(mediaPreview);
       }
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
     };
   }, [mediaPreview]);
 
   useEffect(() => {
-    if (!canvasRef.current || !mediaRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = 400;
-    canvas.height = 600;
-
-    const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (mediaRef.current instanceof HTMLImageElement || mediaRef.current instanceof HTMLVideoElement) {
-        ctx.filter = currentFilter;
-        ctx.drawImage(mediaRef.current, 0, 0, canvas.width, canvas.height);
-        ctx.filter = 'none';
-      }
-
-      textOverlays.forEach(overlay => {
-        ctx.font = `${overlay.fontSize}px ${overlay.fontFamily}`;
-        if (overlay.backgroundColor) {
-          ctx.fillStyle = overlay.backgroundColor;
-          ctx.fillRect(
-            overlay.x - 2,
-            overlay.y - overlay.fontSize,
-            ctx.measureText(overlay.text).width + 4,
-            overlay.fontSize + 4
-          );
-          ctx.fillStyle = overlay.color;
-        } else {
-          ctx.fillStyle = overlay.color;
-        }
-        ctx.fillText(overlay.text, overlay.x, overlay.y);
-      });
-
-      stickerOverlays.forEach(overlay => {
-        ctx.font = `${overlay.size}px Arial`;
-        ctx.fillText(overlay.emoji, overlay.x, overlay.y);
-      });
-
-      gifOverlays.forEach(overlay => {
-        const img = new Image();
-        img.src = overlay.url;
-        ctx.drawImage(img, overlay.x, overlay.y, overlay.size, overlay.size);
-      });
-
-      animationFrameRef.current = requestAnimationFrame(render);
-    };
-
-    if (mediaRef.current instanceof HTMLVideoElement) {
+    if (mediaRef.current instanceof HTMLVideoElement && mediaFile) {
       mediaRef.current.play().catch(() => { });
     }
-
-    render();
-
+    if (audioRef.current && selectedMusic) {
+      audioRef.current.src = selectedMusic.url;
+      audioRef.current.play().catch(() => { });
+    }
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
       if (mediaRef.current instanceof HTMLVideoElement) {
         mediaRef.current.pause();
       }
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
     };
-  }, [mediaPreview, textOverlays, stickerOverlays, gifOverlays, currentFilter]);
+  }, [mediaFile, selectedMusic]);
 
   const addTextOverlay = () => {
     if (!newText.trim()) {
@@ -479,14 +427,14 @@ const StoryEditor: React.FC<StoryEditorProps> = ({ isOpen, onClose, onStoryCreat
     setFontFamily('Arial');
   };
 
-  const emojiList = ['😀', '😂', '😍', '�0', '😎', '🤔', '😴', '🎉', '❤️', '👍', '🔥', '💯', '⭐', '🌟', '🎵', '🎶'];
+  const emojiList = ['😀', '😂', '😍', '😊', '😎', '🤔', '😴', '🎉', '❤️', '👍', '🔥', '💯', '⭐', '🌟', '🎵', '🎶'];
   const gifList = [
     'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
     'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif'
   ];
   const musicList: MusicSelection[] = [
-    { title: 'Summer Vibes', artist: 'Artist 1', duration: 30 },
-    { title: 'Chill Beat', artist: 'Artist 2', duration: 45 }
+    { title: 'Summer Vibes', artist: 'Artist 1', duration: 30, url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+    { title: 'Chill Beat', artist: 'Artist 2', duration: 45, url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' }
   ];
   const filtersList = [
     { name: 'None', value: 'none' },
@@ -534,11 +482,32 @@ const StoryEditor: React.FC<StoryEditorProps> = ({ isOpen, onClose, onStoryCreat
             ) : (
               <div className="flex flex-col flex-1">
                 <div className="relative bg-black">
-                  <canvas ref={canvasRef} className="w-full h-auto" />
                   {mediaFile.type.startsWith('image/') ? (
-                    <img ref={mediaRef as React.RefObject<HTMLImageElement>} src={mediaPreview} alt="Preview" className="hidden" />
+                    <img
+                      ref={mediaRef as React.RefObject<HTMLImageElement>}
+                      src={mediaPreview}
+                      alt="Preview"
+                      className="w-full h-auto"
+                      style={{ filter: currentFilter }}
+                    />
                   ) : (
-                    <video ref={mediaRef as React.RefObject<HTMLVideoElement>} src={mediaPreview} className="hidden" muted loop />
+                    <video
+                      ref={mediaRef as React.RefObject<HTMLVideoElement>}
+                      src={mediaPreview}
+                      className="w-full h-auto"
+                      style={{ filter: currentFilter }}
+                      autoPlay
+                      muted={false}
+                      loop
+                    />
+                  )}
+                  {selectedMusic && (
+                    <audio
+                      ref={audioRef}
+                      src={selectedMusic.url}
+                      autoPlay
+                      loop
+                    />
                   )}
 
                   {textOverlays.map(overlay => (
@@ -770,10 +739,8 @@ const StoryEditor: React.FC<StoryEditorProps> = ({ isOpen, onClose, onStoryCreat
                 >
                   {loading ? 'Publishing...' : 'Publish Story'}
                 </Button>
-
               </div>
             )}
-
           </div>
         </div>
       </DialogContent>
